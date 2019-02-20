@@ -38,7 +38,6 @@ import java.util.concurrent.RejectedExecutionException;
 
 public class NewResponsibilitiesDispatcher {
   private static final Logger LOGGER = Logger.getInstance(NewResponsibilitiesDispatcher.class.getName());
-  @NotNull private final ExecutorServices myExecutorServices;
   @NotNull private ResponsibilityFacadeEx myResponsibilityFacade;
   @NotNull private final ProjectManager myProjectManager;
 
@@ -47,11 +46,10 @@ public class NewResponsibilitiesDispatcher {
                                        @NotNull ProjectManager projectManager,
                                        @NotNull final ResponsibilityFacadeEx responsibilityFacade) {
     myProjectManager = projectManager;
-    myExecutorServices = executorServices;
     myResponsibilityFacade = responsibilityFacade;
 
     try {
-      myExecutorServices.getLowPriorityExecutorService().submit(this::processExistResponsibilities);
+      executorServices.getLowPriorityExecutorService().submit(this::processExistResponsibilities);
     } catch (RejectedExecutionException e) {
       // server shutdown, do nothing
     }
