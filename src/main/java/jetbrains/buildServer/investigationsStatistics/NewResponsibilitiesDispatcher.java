@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import jetbrains.buildServer.investigationsStatistics.common.Constants;
 import jetbrains.buildServer.responsibility.ResponsibilityEntry;
 import jetbrains.buildServer.responsibility.ResponsibilityFacadeEx;
+import jetbrains.buildServer.responsibility.TestNameResponsibilityEntry;
 import jetbrains.buildServer.serverSide.BuildServerAdapter;
 import jetbrains.buildServer.serverSide.BuildServerListenerEventDispatcher;
 import jetbrains.buildServer.serverSide.ProjectManager;
@@ -88,9 +89,19 @@ public class NewResponsibilitiesDispatcher {
   }
 
   private void processExistResponsibilities() {
-    for (String projectId : myProjectManager.getProjectIds()) {
-      Map<User, List<ResponsibilityEntry>> responsibilities = myResponsibilityFacade.getResponsibilitiesMap(projectId);
-      // to smt
+    for (SProject project : myProjectManager.getProjects()) {
+      String projectId = project.getProjectId();
+      Map<User, List<ResponsibilityEntry>> map = myResponsibilityFacade.getResponsibilitiesMap(projectId);
+
+      //TODO: project.getBuildTypes() -> filter them by default branch, get last finished build and verify whether it exists and contains test runs for investigations below
+
+      for (List<ResponsibilityEntry> responsibilities : map.values()) {
+        for (ResponsibilityEntry responsibilityEntry : responsibilities) {
+          if (responsibilityEntry instanceof TestNameResponsibilityEntry) {
+            //do smt with it
+          }
+        }
+      }
     }
   }
 }
