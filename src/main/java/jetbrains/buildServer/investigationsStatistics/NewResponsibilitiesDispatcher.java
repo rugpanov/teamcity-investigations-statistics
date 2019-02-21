@@ -19,36 +19,31 @@ package jetbrains.buildServer.investigationsStatistics;
 import com.intellij.openapi.diagnostic.Logger;
 import jetbrains.buildServer.investigationsStatistics.common.Constants;
 import jetbrains.buildServer.responsibility.ResponsibilityEntry;
-import jetbrains.buildServer.responsibility.ResponsibilityFacadeEx;
 import jetbrains.buildServer.responsibility.TestNameResponsibilityEntry;
-import jetbrains.buildServer.serverSide.BuildServerAdapter;
-import jetbrains.buildServer.serverSide.BuildServerListenerEventDispatcher;
-import jetbrains.buildServer.serverSide.ProjectManager;
-import jetbrains.buildServer.serverSide.SProject;
+import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.executors.ExecutorServices;
 import jetbrains.buildServer.serverSide.problems.BuildProblemInfo;
 import jetbrains.buildServer.tests.TestName;
-import jetbrains.buildServer.users.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
 public class NewResponsibilitiesDispatcher {
   private static final Logger LOGGER = Logger.getInstance(NewResponsibilitiesDispatcher.class.getName());
-  @NotNull private ResponsibilityFacadeEx myResponsibilityFacade;
+  private ResponsibilitiesHolder myHolder = new ResponsibilitiesHolder();
+  private final InvestigationsManager myInvestigationsManager;
   @NotNull private final ProjectManager myProjectManager;
 
   public NewResponsibilitiesDispatcher(@NotNull final BuildServerListenerEventDispatcher buildServerListenerEventDispatcher,
-                                       @NotNull ExecutorServices executorServices,
-                                       @NotNull ProjectManager projectManager,
-                                       @NotNull final ResponsibilityFacadeEx responsibilityFacade) {
+                                       @NotNull final ExecutorServices executorServices,
+                                       @NotNull final ProjectManager projectManager,
+                                       @NotNull final InvestigationsManager investigationsManager) {
     myProjectManager = projectManager;
-    myResponsibilityFacade = responsibilityFacade;
-
+    myInvestigationsManager = investigationsManager;
     try {
       executorServices.getLowPriorityExecutorService().submit(this::processExistResponsibilities);
     } catch (RejectedExecutionException e) {
@@ -90,18 +85,43 @@ public class NewResponsibilitiesDispatcher {
 
   private void processExistResponsibilities() {
     for (SProject project : myProjectManager.getProjects()) {
-      String projectId = project.getProjectId();
-      Map<User, List<ResponsibilityEntry>> map = myResponsibilityFacade.getResponsibilitiesMap(projectId);
-
-      //TODO: project.getBuildTypes() -> filter them by default branch, get last finished build and verify whether it exists and contains test runs for investigations below
-
-      for (List<ResponsibilityEntry> responsibilities : map.values()) {
-        for (ResponsibilityEntry responsibilityEntry : responsibilities) {
-          if (responsibilityEntry instanceof TestNameResponsibilityEntry) {
-            //do smt with it
-          }
+      for (SBuildType buildType : project.getBuildTypes()) {
+        SFinishedBuild lastFinishedBuild = getLastFinishedBuild(buildType);
+        for (STestRun testRun : getAllFailedTests(lastFinishedBuild)) {
+          processFailedTestRun(project, buildType, testRun);
         }
       }
     }
+  }
+
+  private void processFailedTestRun(SProject project, SBuildType buildType, STestRun testRun) {
+    @Nullable TestNameResponsibilityEntry testNameResponsibilityEntry =
+            myInvestigationsManager.getInvestigation(project, testRun.getBuild(), testRun.getTest());
+    if (testNameResponsibilityEntry != null) {
+      @Nullable SBuild firstFailedIn = testRun.getFirstFailed();
+      if (firstFailedIn != null) {
+        myHolder.add(project, buildType, firstFailedIn, testNameResponsibilityEntry);
+      }
+    }
+  }
+
+  @Nullable
+  private SFinishedBuild getLastFinishedBuild(SBuildType buildType) {
+    BranchEx branch = ((BuildTypeEx) buildType).getBranch(Branch.DEFAULT_BRANCH_NAME);
+    return branch.getLastChangesFinished();
+  }
+
+  @NotNull
+  private List<STestRun> getAllFailedTests(@Nullable SFinishedBuild lastFinishedBuild) {
+    if (lastFinishedBuild == null) {
+      return Collections.emptyList();
+    }
+
+    BuildStatisticsOptions options =
+            new BuildStatisticsOptions(BuildStatisticsOptions.FIRST_FAILED_IN_BUILD |
+                    BuildStatisticsOptions.COMPILATION_ERRORS |
+                    BuildStatisticsOptions.IGNORED_TESTS,
+                    -1);
+    return lastFinishedBuild.getBuildStatistics(options).getFailedTestsIncludingMuted();
   }
 }
