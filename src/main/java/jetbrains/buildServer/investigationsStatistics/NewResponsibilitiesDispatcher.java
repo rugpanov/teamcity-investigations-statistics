@@ -57,7 +57,7 @@ public class NewResponsibilitiesDispatcher {
 
   private void processFailedTestRun(SProject project, SBuildType buildType, STestRun testRun) {
     @Nullable TestNameResponsibilityEntry testNameResponsibilityEntry =
-            myInvestigationsManager.getInvestigation(project, testRun.getBuild(), testRun.getTest());
+            myInvestigationsManager.getInvestigation(project, testRun.getTest());
     if (testNameResponsibilityEntry != null) {
       @Nullable SBuild firstFailedIn = testRun.getFirstFailed();
       if (firstFailedIn != null) {
