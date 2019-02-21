@@ -10,4 +10,5 @@
   <!-- see http://static.springsource.org/spring/docs/3.0.x/spring-framework-reference/html/beans.html -->
 
   <bean class="jetbrains.buildServer.investigationsStatistics.NewResponsibilitiesDispatcher"/>
+  <bean class="jetbrains.buildServer.investigationsStatistics.InvestigationsManager"/>
 </beans>
