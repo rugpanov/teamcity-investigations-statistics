@@ -1,9 +1,11 @@
 package jetbrains.buildServer.investigationsStatistics;
 
 import jetbrains.buildServer.BuildProject;
+import jetbrains.buildServer.responsibility.BuildProblemResponsibilityEntry;
 import jetbrains.buildServer.responsibility.TestNameResponsibilityEntry;
 import jetbrains.buildServer.serverSide.SProject;
 import jetbrains.buildServer.serverSide.STest;
+import jetbrains.buildServer.serverSide.problems.BuildProblem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,14 +14,14 @@ import java.util.List;
 
 public class InvestigationsManager {
 
-//  @Nullable
-//  public BuildProblemResponsibilityEntry getInvestigation(@NotNull final SProject project,
-//                                         @NotNull final BuildProblem problem) {
-//    for (BuildProblemResponsibilityEntry entry : problem.getAllResponsibilities()) {
-//      if (belongSameProjectOrParent(entry.getProject(), project)) return entry;
-//    }
-//    return null;
-//  }
+  @Nullable
+  BuildProblemResponsibilityEntry getInvestigation(@NotNull final SProject project,
+                                                   @NotNull final BuildProblem problem) {
+    for (BuildProblemResponsibilityEntry entry : problem.getAllResponsibilities()) {
+      if (belongSameProjectOrParent(entry.getProject(), project)) return entry;
+    }
+    return null;
+  }
 
   @Nullable
   TestNameResponsibilityEntry getInvestigation(@NotNull final SProject project,

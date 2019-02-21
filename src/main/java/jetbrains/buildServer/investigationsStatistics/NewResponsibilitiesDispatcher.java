@@ -16,9 +16,12 @@
 
 package jetbrains.buildServer.investigationsStatistics;
 
+import jetbrains.buildServer.investigationsStatistics.common.Utils;
+import jetbrains.buildServer.responsibility.BuildProblemResponsibilityEntry;
 import jetbrains.buildServer.responsibility.TestNameResponsibilityEntry;
 import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.executors.ExecutorServices;
+import jetbrains.buildServer.serverSide.problems.BuildProblem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,30 +50,18 @@ public class NewResponsibilitiesDispatcher {
   private void processExistResponsibilities() {
     for (SProject project : myProjectManager.getProjects()) {
       for (SBuildType buildType : project.getBuildTypes()) {
-        SFinishedBuild lastFinishedBuild = getLastFinishedBuild(buildType);
+        SFinishedBuild lastFinishedBuild = Utils.getLastFinishedBuild(buildType);
         for (STestRun testRun : getAllFailedTests(lastFinishedBuild)) {
           processFailedTestRun(project, buildType, testRun);
+        }
+
+        for (BuildProblem buildProblem : Utils.getBuildProblems(lastFinishedBuild)) {
+          processBuildProblem(project, buildType, buildProblem);
         }
       }
     }
   }
 
-  private void processFailedTestRun(SProject project, SBuildType buildType, STestRun testRun) {
-    @Nullable TestNameResponsibilityEntry testNameResponsibilityEntry =
-            myInvestigationsManager.getInvestigation(project, testRun.getTest());
-    if (testNameResponsibilityEntry != null) {
-      @Nullable SBuild firstFailedIn = testRun.getFirstFailed();
-      if (firstFailedIn != null) {
-        myHolder.add(project, buildType, firstFailedIn, testNameResponsibilityEntry);
-      }
-    }
-  }
-
-  @Nullable
-  private SFinishedBuild getLastFinishedBuild(SBuildType buildType) {
-    BranchEx branch = ((BuildTypeEx) buildType).getBranch(Branch.DEFAULT_BRANCH_NAME);
-    return branch.getLastChangesFinished();
-  }
 
   @NotNull
   private List<STestRun> getAllFailedTests(@Nullable SFinishedBuild lastFinishedBuild) {
@@ -84,5 +75,30 @@ public class NewResponsibilitiesDispatcher {
                     BuildStatisticsOptions.IGNORED_TESTS,
                     -1);
     return lastFinishedBuild.getBuildStatistics(options).getFailedTestsIncludingMuted();
+  }
+
+  private void processFailedTestRun(SProject project, SBuildType buildType, STestRun testRun) {
+    @Nullable TestNameResponsibilityEntry responsibility =
+            myInvestigationsManager.getInvestigation(project, testRun.getTest());
+    if (responsibility != null) {
+      @Nullable SBuild firstFailedIn = testRun.getFirstFailed();
+      if (firstFailedIn != null) {
+        myHolder.add(project, buildType, firstFailedIn, responsibility);
+      }
+    }
+  }
+
+
+  private void processBuildProblem(@NotNull SProject project,
+                                   @NotNull SBuildType buildType,
+                                   @NotNull BuildProblem buildProblem) {
+    @Nullable
+    BuildProblemResponsibilityEntry responsibility = myInvestigationsManager.getInvestigation(project, buildProblem);
+    if (responsibility != null) {
+      @Nullable SFinishedBuild firstFailedIn = FirstFailedBuildCalculator.getFirstFailedBuild(buildType, buildProblem);
+      if (firstFailedIn != null) {
+        myHolder.add(project, buildType, firstFailedIn, responsibility);
+      }
+    }
   }
 }
