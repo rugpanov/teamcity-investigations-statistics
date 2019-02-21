@@ -1,11 +1,9 @@
 package jetbrains.buildServer.investigationsStatistics;
 
 import jetbrains.buildServer.BuildProject;
-import jetbrains.buildServer.responsibility.ResponsibilityFacadeEx;
 import jetbrains.buildServer.responsibility.TestNameResponsibilityEntry;
 import jetbrains.buildServer.serverSide.SProject;
 import jetbrains.buildServer.serverSide.STest;
-import jetbrains.buildServer.serverSide.audit.AuditLogProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,17 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InvestigationsManager {
-
-  @NotNull
-  private final AuditLogProvider myAuditLogProvider;
-  @NotNull
-  private final ResponsibilityFacadeEx myResponsibilityFacade;
-
-  public InvestigationsManager(@NotNull final AuditLogProvider auditLogProvider,
-                               @NotNull final ResponsibilityFacadeEx responsibilityFacade) {
-    this.myAuditLogProvider = auditLogProvider;
-    myResponsibilityFacade = responsibilityFacade;
-  }
 
 //  @Nullable
 //  public BuildProblemResponsibilityEntry getInvestigation(@NotNull final SProject project,
