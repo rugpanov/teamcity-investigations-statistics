@@ -63,7 +63,6 @@ class StatisticsFeatures {
   private String getBuildProblemText(@NotNull final BuildProblem problem, @NotNull final SBuild build) {
     StringBuilder problemSpecificText = new StringBuilder();
 
-    // todo make an extension point here
     if (problem.getBuildProblemData().getType().equals(BuildProblemTypes.TC_COMPILATION_ERROR_TYPE)) {
       final Integer compileBlockIndex = getCompileBlockIndex(problem);
       if (compileBlockIndex != null) {
