@@ -83,7 +83,7 @@ public class NewResponsibilitiesDispatcher {
     if (responsibility != null) {
       @Nullable SBuild firstFailedIn = testRun.getFirstFailed();
       if (firstFailedIn != null) {
-        myHolder.add(project, buildType, firstFailedIn, responsibility);
+        myHolder.add(project, buildType, firstFailedIn, responsibility, testRun);
       }
     }
   }
@@ -97,7 +97,7 @@ public class NewResponsibilitiesDispatcher {
     if (responsibility != null) {
       @Nullable SFinishedBuild firstFailedIn = FirstFailedBuildCalculator.getFirstFailedBuild(buildType, buildProblem);
       if (firstFailedIn != null) {
-        myHolder.add(project, buildType, firstFailedIn, responsibility);
+        myHolder.add(project, buildType, firstFailedIn, responsibility, buildProblem);
       }
     }
   }
